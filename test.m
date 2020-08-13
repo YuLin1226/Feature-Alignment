@@ -86,6 +86,6 @@ pose = [1,1,pi/6];
 % [Con , ConEq] = NonlinearConstraints(r);T
 % nonlcon = [Con , ConEq]
 
-options = optimoptions('fmincon','Display','iter','Algorithm','sqp');
-[pose_min, fval] = fmincon('obj', pose, A, B, Aeq, Beq, lb, ub, nonlcon, options)
+options = optimoptions('fmincon','Display','iter','Algorithm','trust-region-reflective');
+[pose_min, fval, flag] = fmincon('obj', pose, A, B, Aeq, Beq, lb, ub, nonlcon)
 
