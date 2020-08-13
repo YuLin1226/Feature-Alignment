@@ -33,56 +33,83 @@ for i = 1:90
 end
 
 plot(x,y,'b.'); hold on;
-axis([-10,90,-10,90]);
+axis([-10,90,-10,70]);
 
 %% Algorithm
 d_threshold = 1;
 left_seg = {};
 right_seg = {};
+seg = {};
 for i = 1 : length(x)
-    % Given Point
-    x_left  = x(1 : i);
-    y_left  = y(1 : i);
-    x_right = x(i : end);
-    y_right = y(i : end);
-    
+%     % Given Point
+%     x_left  = x(1 : i);
+%     y_left  = y(1 : i);
+%     x_right = x(i : end);
+%     y_right = y(i : end);
+%     
+%     d_sum = 0;
+%     for L = 1 : length(x_left) - 1
+%         
+%         d = cal_dist( x_left(end - L) , y_left(end - L) , x_left(end) , y_left(end) );
+%         d_sum  = d_sum + cal_dist( x_left(end - L) , y_left(end - L) , x_left(end - L + 1) , y_left(end - L + 1) );
+%         
+%         if (d_sum - d) > d_threshold || L == length(x_left) - 1
+%             
+%             data_cell = { x_left(end - L +1 : end) , y_left(end - L +1 : end) };
+%             left_seg = cat(1, left_seg, data_cell);
+%             
+%             break;
+%         end
+%     end
+% 
+%     
+%     d_sum = 0;
+%     for R = 1 : length(x_right) - 1
+%         
+%         d = cal_dist( x_right(1) , y_right(1) , x_right(R+1) , y_right(R+1) );
+%         d_sum  = d_sum + cal_dist( x_right(R) , y_right(R) , x_right(R+1) , y_right(R+1) );
+%         
+%         if (d_sum - d) > d_threshold
+% 
+%             data_cell = { x_right(1 : R) , y_right(1 : R) };
+%             right_seg = cat(1, right_seg, data_cell);
+% 
+%             break;
+%         end
+%     end
+
     d_sum = 0;
-    for L = 1 : length(x_left) - 1
+    for L = 1 : length(x) - 1
         
-        d = cal_dist( x_left(end - L) , y_left(end - L) , x_left(end) , y_left(end) );
-        d_sum  = d_sum + cal_dist( x_left(end - L) , y_left(end - L) , x_left(end - L + 1) , y_left(end - L + 1) );
+        d = cal_dist( x(L+1) , y(L+1) , x(1) , y(1) );
+        d_sum  = d_sum + cal_dist( x(L) , y(L) , x(L + 1) , y(L + 1) );
         
-        if (d_sum - d) > d_threshold
+        if (d_sum - d) > d_threshold || L == length(x) - 1
             
-            data_cell = { x_left(end - L +1 : end) , y_left(end - L +1 : end) };
-            left_seg = cat(1, left_seg, data_cell);
-            
+            data_cell = { x(1:L) , y(1:L) };
+            seg = cat(1, seg, data_cell);
+            x = x(L:end);
+            y = y(L:end);
             break;
         end
     end
 
-    
-    d_sum = 0;
-    for R = 1 : length(x_right) - 1
-        
-        d = cal_dist( x_right(1) , y_right(1) , x_right(R+1) , y_right(R+1) );
-        d_sum  = d_sum + cal_dist( x_right(R) , y_right(R) , x_right(R+1) , y_right(R+1) );
-        
-        if (d_sum - d) > d_threshold
-
-            data_cell = { x_right(1 : R) , y_right(1 : R) };
-            right_seg = cat(1, right_seg, data_cell);
-
-            break;
-        end
+    if length(x) <= 2
+        seg{end,1} = [ seg{end,1} , x(end)];
+        seg{end,2} = [ seg{end,2} , y(end)];
+        break;
     end
-    
 end
 
-x = left_seg{1,1};
-y = left_seg{1,2};
+%%
 
-plot(x,y,'r.');
+for i = 1 : length(seg)
+    x = seg{i,1};
+    y = seg{i,2};
+
+    plot(x,y,'.');
+end
+
 
 
 
