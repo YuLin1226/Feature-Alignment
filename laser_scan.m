@@ -1,42 +1,84 @@
 clear;
+close all;
 clc;
-%% Case 1
-x = [];
-y = [];
+%%
 
+case_num = 1;
+x = []; y = [];
 noise_mag = 0.5;
-% Create horizontal line
-for i = 1:50
-    new_x = 5 + noise_mag*(rand - 0.5);
-    new_y = i + noise_mag*(rand - 0.5);
-    x = [x, new_x];
-    y = [y, new_y];
-end
+switch case_num
+    
+    case 1
+        % Create horizontal line
+        for i = 1:50
+            new_x = 5 + noise_mag*(rand - 0.5);
+            new_y = i + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
 
-% Create vertical line
-for i = 1:50
-    new_x = x(end) + 1 + noise_mag*(rand - 0.5);
-    new_y = y(end) + noise_mag*(rand - 0.5);
-    x = [x, new_x];
-    y = [y, new_y];
-end
+        % Create vertical line
+        for i = 1:50
+            new_x = x(end) + 1 + noise_mag*(rand - 0.5);
+            new_y = y(end) + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
 
-% Create circle
-r = 20;
-x_c = x(end) + r * cos(pi/3);
-y_c = y(end) - r * sin(pi/3);
-for i = 1:90
-    new_x = x_c + r*cos(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
-    new_y = y_c + r*sin(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
-    x = [x, new_x];
-    y = [y, new_y];
-end
+        % Create circle
+        r = 20;
+        x_c = x(end) + r * cos(pi/3);
+        y_c = y(end) - r * sin(pi/3);
+        for i = 1:90
+            new_x = x_c + r*cos(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
+            new_y = y_c + r*sin(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+        
+    case 2
+        % Create horizontal line
+        for i = 1:50
+            new_x = 50 + noise_mag*(rand - 0.5);
+            new_y = i + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
 
+        % Create vertical line
+        for i = 1:50
+            new_x = x(end) - 1 + noise_mag*(rand - 0.5);
+            new_y = y(end) + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+
+        % Create circle
+        for i = 1:50
+            new_x = x(end) + noise_mag*(rand - 0.5);
+            new_y = y(end) -1 + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+end
+%%
 plot(x,y,'b.'); hold on;
 axis([-10,90,-10,70]);
 
+%% Test
+% subplot(212);
+% dx = diff(x)/0.044; dy = diff(y)/0.044;
+% ddx = diff(dx)/0.044; ddy = diff(dy)/0.044;
+% dx = dx(2:end); dy = dy(2:end);
+% k = (dx.*ddy - ddx.*dy)./(dx.^2 + dy.^2).^1.5;
+% plot((1:length(k))*1, k);
 %% Algorithm
-d_threshold = 1;
+% ---
+% If d_threshold is :
+% 1) too small, then a line will be segmented into several pieces.
+% 2) too large, corners will be included in lines.
+% ---
+d_threshold = 3;
 left_seg = {};
 right_seg = {};
 seg = {};
@@ -102,7 +144,7 @@ for i = 1 : length(x)
 end
 
 %%
-
+% subplot(211);
 for i = 1 : length(seg)
     x = seg{i,1};
     y = seg{i,2};
@@ -111,6 +153,41 @@ for i = 1 : length(seg)
 end
 
 
+%% 
+% ---
+% If shape_thres is :
+% 1) too small, then a line will be identified as a circle.
+% 2) too large, then a part of cirlce maybe seen as a line.
+% ---
+shape_thres = 0.07;
+for i = 1 : length(seg)
+    x = seg{i,1};
+    y = seg{i,2};
+
+    x1 = x(1); 
+    y1 = y(1);
+    
+    xn = x(end);
+    yn = y(end);
+    
+    xm = mean(x);
+    ym = mean(y);
+    
+    v1m = [xm - x1, ym - y1];
+    vmn = [xn - xm, yn - ym];
+    v1n = [xn - x1, yn - y1];
+    
+    arc1 = cal_arccos(v1m, vmn);
+    arc2 = cal_arccos(v1m, v1n);
+    arc3 = cal_arccos(vmn, v1n);
+    
+    if mean([arc1, arc2, arc3]) < shape_thres
+        text(xm,ym,"line")
+    else
+        text(xm,ym,"circle")
+    end
+        
+end
 
 
 
