@@ -60,10 +60,38 @@ switch case_num
             x = [x, new_x];
             y = [y, new_y];
         end
+        
+    case 3
+        % Create horizontal line
+        for i = 1:50
+            new_x = i + noise_mag*(rand - 0.5);
+            new_y = i + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+
+        % Create vertical line
+        for i = 1:50
+            new_x = x(end) + 1 + noise_mag*(rand - 0.5);
+            new_y = y(end) + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+
+        % Create circle
+        r = 20;
+        x_c = x(end) + r * cos(pi/3);
+        y_c = y(end) - r * sin(pi/3);
+        for i = 1:90
+            new_x = x_c + r*cos(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
+            new_y = y_c + r*sin(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
 end
 %%
 plot(x,y,'b.'); hold on;
-axis([-10,90,-10,70]);
+axis([-10,130,-10,70]);
 
 %% Test
 % subplot(212);
@@ -78,7 +106,7 @@ axis([-10,90,-10,70]);
 % 1) too small, then a line will be segmented into several pieces.
 % 2) too large, corners will be included in lines.
 % ---
-d_threshold = 3;
+d_threshold = 1.2;
 left_seg = {};
 right_seg = {};
 seg = {};
@@ -128,7 +156,7 @@ for i = 1 : length(x)
         
         if (d_sum - d) > d_threshold || L == length(x) - 1
             
-            data_cell = { x(1:L) , y(1:L) };
+            data_cell = { x(1:L) , y(1:L) ,{}};
             seg = cat(1, seg, data_cell);
             x = x(L:end);
             y = y(L:end);
@@ -182,13 +210,98 @@ for i = 1 : length(seg)
     arc3 = cal_arccos(vmn, v1n);
     
     if mean([arc1, arc2, arc3]) < shape_thres
+        seg{i,3} = "line";
         text(xm,ym,"line")
     else
+        seg{i,3} = "circle";
         text(xm,ym,"circle")
     end
         
 end
 
+%%  
+k = 0;
+i = 0;
+circle_thres = 0.7;
+for j = 1 : length(seg) - 1 
+    i = j;
+%     i = i + 1 + k;
+%     k = 0;
+    
+    
+    x1 = seg{i,1};   y1 = seg{i,2};
+    x1m = mean(x1);  y1m = mean(y1);
+    x2 = seg{i+1,1}; y2 = seg{i+1,2};
+    x2m = mean(x2);  y2m = mean(y2);
+
+    val = cal_arccos([x1(end) - x1m, y1(end) - y1m], [x2m - x2(1), y2m - y2(1)]);
+    
+    
+    if seg{i,3} == "circle"
+            
+        % circle , circle
+        if seg{i,3} == seg{i+1,3}   
+            
+            % ¦X¨Öcircle
+            if val < circle_thres   
+                k = -1;
+                text(x1(end), y1(end), "\leftarrow Circle Merge",'Color','blue');
+            else
+                text(x1(end), y1(end), "\leftarrow undefined",'Color','red');
+            end
+            
+        % circle , line   
+        else                        
+   
+            % §PÂ_Âà¨¤
+            if val > circle_thres  
+                k = 0;
+                text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
+            % ¦X¨Öcircle
+            else
+                k = -1;
+                text(x1(end), y1(end), "\leftarrow Circle Merge",'Color','blue');
+            end
+            
+        end
+        
+    % seg{i,3} == "line"    
+    else 
+        
+        % line , line
+        if seg{i,3} == seg{i+1,3}   
+            
+            
+            % §PÂ_Âà¨¤
+            if val > circle_thres  
+                k = 0;
+                text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
+                
+            % ¦X¨Öline
+            else
+                k = -1;
+                text(x1(end), y1(end), "\leftarrow Line Merge",'Color','blue');
+            end
+            
+        % line , circle
+        else                        
+            
+            
+            % §PÂ_Âà¨¤
+            if val > circle_thres  
+                k = 0;
+                text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
+%             % ¦X¨Öline
+            else
+                text(x1(end), y1(end), "\leftarrow Undefined",'Color','red');
+%                 k = -1;
+            end
+            
+            
+        end
+        
+    end
+end
 
 
 
