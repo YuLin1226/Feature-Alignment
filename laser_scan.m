@@ -107,8 +107,8 @@ axis([-10,130,-10,70]);
 % 2) too large, corners will be included in lines.
 % ---
 d_threshold = 1.2;
-left_seg = {};
-right_seg = {};
+% left_seg = {};
+% right_seg = {};
 seg = {};
 for i = 1 : length(x)
 %     % Given Point
@@ -160,6 +160,7 @@ for i = 1 : length(x)
             seg = cat(1, seg, data_cell);
             x = x(L:end);
             y = y(L:end);
+
             break;
         end
     end
@@ -173,7 +174,7 @@ end
 
 %%
 % subplot(211);
-for i = 1 : length(seg)
+for i = 1 : size(seg,1)
     x = seg{i,1};
     y = seg{i,2};
 
@@ -188,7 +189,7 @@ end
 % 2) too large, then a part of cirlce maybe seen as a line.
 % ---
 shape_thres = 0.07;
-for i = 1 : length(seg)
+for i = 1 : size(seg,1)
     x = seg{i,1};
     y = seg{i,2};
 
@@ -223,6 +224,7 @@ end
 k = 0;
 i = 0;
 circle_thres = 0.7;
+corner_thres = 0.7;
 for j = 1 : length(seg) - 1 
     i = j;
 %     i = i + 1 + k;
@@ -254,7 +256,7 @@ for j = 1 : length(seg) - 1
         else                        
    
             % §PÂ_Âà¨¤
-            if val > circle_thres  
+            if val > corner_thres  
                 k = 0;
                 text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
             % ¦X¨Öcircle
@@ -273,7 +275,7 @@ for j = 1 : length(seg) - 1
             
             
             % §PÂ_Âà¨¤
-            if val > circle_thres  
+            if val > corner_thres  
                 k = 0;
                 text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
                 
@@ -288,12 +290,13 @@ for j = 1 : length(seg) - 1
             
             
             % §PÂ_Âà¨¤
-            if val > circle_thres  
+            if val > corner_thres  
                 k = 0;
                 text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
+                
 %             % ¦X¨Öline
             else
-                text(x1(end), y1(end), "\leftarrow Undefined",'Color','red');
+                text(x1(end), y1(end), "\leftarrow Undefined",'Color','green');
 %                 k = -1;
             end
             
