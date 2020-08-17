@@ -3,9 +3,9 @@ close all;
 clc;
 %% Create Scan Points
 
-case_num = 1;
+case_num = 3;
 x = []; y = [];
-noise_mag = 2;
+noise_mag = 1;
 switch case_num
     
     case 1
@@ -172,6 +172,8 @@ for i = 1 : length(x)
     end
 end
 
+
+
 %% Plot Segments
 subplot(211);
 for i = 1 : size(seg,1)
@@ -190,6 +192,7 @@ axis([-10,130,-10,70]);
 % 2) too large, then a part of cirlce maybe seen as a line.
 % ---
 shape_thres = 0.07;
+R_thres = 50;
 for i = 1 : size(seg,1)
     x = seg{i,1};
     y = seg{i,2};
@@ -203,22 +206,33 @@ for i = 1 : size(seg,1)
     xm = mean(x);
     ym = mean(y);
     
-    v1m = [xm - x1, ym - y1];
-    vmn = [xn - xm, yn - ym];
-    v1n = [xn - x1, yn - y1];
-    
-    arc1 = cal_arccos(v1m, vmn);
-    arc2 = cal_arccos(v1m, v1n);
-    arc3 = cal_arccos(vmn, v1n);
-    
-    if mean([arc1, arc2, arc3]) < shape_thres
+%     % 向量評估方式
+%     v1m = [xm - x1, ym - y1];
+%     vmn = [xn - xm, yn - ym];
+%     v1n = [xn - x1, yn - y1];
+%     
+%     arc1 = cal_arccos(v1m, vmn);
+%     arc2 = cal_arccos(v1m, v1n);
+%     arc3 = cal_arccos(vmn, v1n);
+%     
+%     if mean([arc1, arc2, arc3]) < shape_thres
+%         seg{i,3} = "line";
+%         text(xm,ym,"line")
+%     else
+%         seg{i,3} = "circle";
+%         text(xm,ym,"circle")
+%     end
+        
+
+    % 圓半徑評估方式
+    [~ , ~ , r] = cal_circle([x1, xm, xn], [y1, ym, yn]);
+    if r > R_thres
         seg{i,3} = "line";
         text(xm,ym,"line")
     else
         seg{i,3} = "circle";
         text(xm,ym,"circle")
     end
-        
 end
 
 %%  Corner Detection and Merger Operation
@@ -249,6 +263,7 @@ for j = 1 : length(seg) - 1
                 seg{i,2} = [ seg{i,2} , seg{i+1,2} ];
                 seg(i+1,:) = [];
                 k = -1;
+                text(x1(end), y1(end), "\leftarrow Circle Merge",'Color','blue');
 %             % 合併circle
 %             if val < circle_thres   
 %                 k = -1;
@@ -272,7 +287,7 @@ for j = 1 : length(seg) - 1
             if val > corner_thres  
                 k = 0;
                 text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
-            % 合併circle
+            % 合併circle (後者理當是Circle，但是誤判成Line的情況)
             else
                 k = -1;
                 text(x1(end), y1(end), "\leftarrow Circle Merge",'Color','blue');
@@ -317,9 +332,9 @@ for j = 1 : length(seg) - 1
                 k = 0;
                 text(x1(end), y1(end), "\leftarrow Corner Here",'Color','blue');
                 
-%             % 合併line
+%             % 合併line (後者理當是Line，但是誤判成Circle的情況)
             else
-                text(x1(end), y1(end), "\leftarrow Line Merge",'Color','green');
+                text(x1(end), y1(end), "\leftarrow Line Merge",'Color','blue');
                 k = -1;
                 % 合併Operation
                 seg{i,1} = [ seg{i,1} , seg{i+1,1} ];

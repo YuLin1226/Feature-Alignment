@@ -1,11 +1,11 @@
 clear;
 close all;
 clc;
-%%
+%% Create Scan Points
 
 case_num = 1;
 x = []; y = [];
-noise_mag = 0.7;
+noise_mag = 2;
 switch case_num
     
     case 1
@@ -100,13 +100,13 @@ end
 % dx = dx(2:end); dy = dy(2:end);
 % k = (dx.*ddy - ddx.*dy)./(dx.^2 + dy.^2).^1.5;
 % plot((1:length(k))*1, k);
-%% Algorithm
+%% Segmentation
 % ---
 % If d_threshold is :
 % 1) too small, then a line will be segmented into several pieces.
 % 2) too large, corners will be included in lines.
 % ---
-d_threshold = 1.2;
+d_threshold = 5;
 % left_seg = {};
 % right_seg = {};
 seg = {};
@@ -190,6 +190,7 @@ axis([-10,130,-10,70]);
 % 2) too large, then a part of cirlce maybe seen as a line.
 % ---
 shape_thres = 0.07;
+R_thres = 30;
 for i = 1 : size(seg,1)
     x = seg{i,1};
     y = seg{i,2};
@@ -203,22 +204,26 @@ for i = 1 : size(seg,1)
     xm = mean(x);
     ym = mean(y);
     
-    v1m = [xm - x1, ym - y1];
-    vmn = [xn - xm, yn - ym];
-    v1n = [xn - x1, yn - y1];
-    
-    arc1 = cal_arccos(v1m, vmn);
-    arc2 = cal_arccos(v1m, v1n);
-    arc3 = cal_arccos(vmn, v1n);
-    
-    if mean([arc1, arc2, arc3]) < shape_thres
-        seg{i,3} = "line";
-        text(xm,ym,"line")
-    else
-        seg{i,3} = "circle";
-        text(xm,ym,"circle")
-    end
+%     % 向量評估方式
+%     v1m = [xm - x1, ym - y1];
+%     vmn = [xn - xm, yn - ym];
+%     v1n = [xn - x1, yn - y1];
+%     
+%     arc1 = cal_arccos(v1m, vmn);
+%     arc2 = cal_arccos(v1m, v1n);
+%     arc3 = cal_arccos(vmn, v1n);
+%     
+%     if mean([arc1, arc2, arc3]) < shape_thres
+%         seg{i,3} = "line";
+%         text(xm,ym,"line")
+%     else
+%         seg{i,3} = "circle";
+%         text(xm,ym,"circle")
+%     end
         
+
+    % 圓半徑評估方式
+    [~ , ~ , r] = cal_circle([x1, xm, xn], [y1, ym, yn]);
 end
 
 %%  Corner Detection and Merger Operation
