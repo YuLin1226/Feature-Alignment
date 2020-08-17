@@ -1,11 +1,11 @@
 clear;
 close all;
 clc;
-%%
+%% Create Scan Points
 
 case_num = 1;
 x = []; y = [];
-noise_mag = 0.5;
+noise_mag = 2;
 switch case_num
     
     case 1
@@ -89,9 +89,9 @@ switch case_num
             y = [y, new_y];
         end
 end
-%%
-plot(x,y,'b.'); hold on;
-axis([-10,130,-10,70]);
+%% Plot Original Scan Points
+% plot(x,y,'b.'); hold on;
+% axis([-10,130,-10,70]);
 
 %% Test
 % subplot(212);
@@ -100,13 +100,13 @@ axis([-10,130,-10,70]);
 % dx = dx(2:end); dy = dy(2:end);
 % k = (dx.*ddy - ddx.*dy)./(dx.^2 + dy.^2).^1.5;
 % plot((1:length(k))*1, k);
-%% Algorithm
+%% Segmentation
 % ---
 % If d_threshold is :
 % 1) too small, then a line will be segmented into several pieces.
 % 2) too large, corners will be included in lines.
 % ---
-d_threshold = 1.2;
+d_threshold = 5;
 % left_seg = {};
 % right_seg = {};
 seg = {};
@@ -172,17 +172,18 @@ for i = 1 : length(x)
     end
 end
 
-%%
-% subplot(211);
+%% Plot Segments
+subplot(211);
 for i = 1 : size(seg,1)
     x = seg{i,1};
     y = seg{i,2};
 
     plot(x,y,'.');
+    hold on;
 end
+axis([-10,130,-10,70]);
 
-
-%% 
+%% Mark Types of Segments
 % ---
 % If shape_thres is :
 % 1) too small, then a line will be identified as a circle.
@@ -220,15 +221,15 @@ for i = 1 : size(seg,1)
         
 end
 
-%%  
+%%  Corner Detection and Merger Operation
 k = 0;
 i = 0;
-circle_thres = 0.7;
+circle_thres = (pi/180) * 60;
 corner_thres = 0.7;
 for j = 1 : length(seg) - 1 
-    i = j;
-%     i = i + 1 + k;
-%     k = 0;
+%     i = j;
+    i = i + 1 + k;
+    k = 0;
     
     
     x1 = seg{i,1};   y1 = seg{i,2};
@@ -236,21 +237,33 @@ for j = 1 : length(seg) - 1
     x2 = seg{i+1,1}; y2 = seg{i+1,2};
     x2m = mean(x2);  y2m = mean(y2);
 
-    val = cal_arccos([x1(end) - x1m, y1(end) - y1m], [x2m - x2(1), y2m - y2(1)]);
-    
+%     val = cal_arccos([x1(end) - x1m, y1(end) - y1m], [x2m - x2(1), y2m - y2(1)]);
+    val = cal_arccos([x1(end) - x1(1), y1(end) - y1(1)], [x2(end) - x2(1), y2(end) - y2(1)]);
     
     if seg{i,3} == "circle"
             
         % circle , circle
         if seg{i,3} == seg{i+1,3}   
-            
-            % 合併circle
-            if val < circle_thres   
+                % 合併Operation
+                seg{i,1} = [ seg{i,1} , seg{i+1,1} ];
+                seg{i,2} = [ seg{i,2} , seg{i+1,2} ];
+                seg(i+1,:) = [];
                 k = -1;
-                text(x1(end), y1(end), "\leftarrow Circle Merge",'Color','blue');
-            else
-                text(x1(end), y1(end), "\leftarrow undefined",'Color','red');
-            end
+%             % 合併circle
+%             if val < circle_thres   
+%                 k = -1;
+%                 text(x1(end), y1(end), "\leftarrow Circle Merge",'Color','blue');
+%                 
+%                 % 合併Operation
+%                 seg{i,1} = [ seg{i,1} , seg{i+1,1} ];
+%                 seg{i,2} = [ seg{i,2} , seg{i+1,2} ];
+%                 seg(i+1,:) = [];
+%                 
+%                 
+%                 
+%             else
+%                 text(x1(end), y1(end), "\leftarrow undefined",'Color','red');
+%             end
             
         % circle , line   
         else                        
@@ -263,6 +276,11 @@ for j = 1 : length(seg) - 1
             else
                 k = -1;
                 text(x1(end), y1(end), "\leftarrow Circle Merge",'Color','blue');
+                
+                % 合併Operation
+                seg{i,1} = [ seg{i,1} , seg{i+1,1} ];
+                seg{i,2} = [ seg{i,2} , seg{i+1,2} ];
+                seg(i+1,:) = [];
             end
             
         end
@@ -283,6 +301,11 @@ for j = 1 : length(seg) - 1
             else
                 k = -1;
                 text(x1(end), y1(end), "\leftarrow Line Merge",'Color','blue');
+                
+                % 合併Operation
+                seg{i,1} = [ seg{i,1} , seg{i+1,1} ];
+                seg{i,2} = [ seg{i,2} , seg{i+1,2} ];
+                seg(i+1,:) = [];
             end
             
         % line , circle
@@ -296,8 +319,13 @@ for j = 1 : length(seg) - 1
                 
 %             % 合併line
             else
-                text(x1(end), y1(end), "\leftarrow Undefined",'Color','green');
-%                 k = -1;
+                text(x1(end), y1(end), "\leftarrow Line Merge",'Color','green');
+                k = -1;
+                % 合併Operation
+                seg{i,1} = [ seg{i,1} , seg{i+1,1} ];
+                seg{i,2} = [ seg{i,2} , seg{i+1,2} ];
+                seg(i+1,:) = [];
+                
             end
             
             
@@ -306,7 +334,25 @@ for j = 1 : length(seg) - 1
     end
 end
 
+subplot(212)
+for i = 1 : size(seg,1)
+    x = seg{i,1};
+    y = seg{i,2};
 
+    plot(x,y,'.');
+    hold on;
+end
+axis([-10,130,-10,70]);
+
+%% Landmark Output
+circle_num = 0;
+for i = 1 : size(seg,1)
+    if seg{i,3} == "circle"
+        circle_num = circle_num + 1;
+    end
+end
+seg
+landmark = {"line",{ size(seg,1) - 1 } ; "circle",{ circle_num }};
 
 
 
