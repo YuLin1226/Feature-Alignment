@@ -3,7 +3,7 @@ close all;
 clc;
 %% Create Scan Points
 
-case_num = 3;
+case_num = 4;
 x = []; y = [];
 noise_mag = 1;
 switch case_num
@@ -88,6 +88,40 @@ switch case_num
             x = [x, new_x];
             y = [y, new_y];
         end
+        
+        
+        case 4
+        % Create horizontal line
+        for i = 1:50
+            new_x = 5 + noise_mag*(rand - 0.5);
+            new_y = i + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+
+        % Create vertical line
+        for i = 1:50
+            new_x = x(end) + 1 + noise_mag*(rand - 0.5);
+            new_y = y(end) + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+
+        % Create circle
+        r = 20;
+        x_c = x(end) + r * cos(pi/3) + 20;
+        y_c = y(end) - r * sin(pi/3) - 10;
+        for i = 1:90
+            new_x = x_c + r*cos(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
+            new_y = y_c + r*sin(pi/180*i*2 + 2*pi/3) + noise_mag*(rand - 0.5);
+            x = [x, new_x];
+            y = [y, new_y];
+        end
+        
+        
+        
+        
+        
 end
 %% Plot Original Scan Points
 % plot(x,y,'b.'); hold on;
@@ -107,9 +141,11 @@ end
 % 2) too large, corners will be included in lines.
 % ---
 d_threshold = 5;
+d_conti_thres = 10;
 % left_seg = {};
 % right_seg = {};
 seg = {};
+
 for i = 1 : length(x)
 %     % Given Point
 %     x_left  = x(1 : i);
@@ -151,25 +187,34 @@ for i = 1 : length(x)
     d_sum = 0;
     for L = 1 : length(x) - 1
         
-        d = cal_dist( x(L+1) , y(L+1) , x(1) , y(1) );
-        d_sum  = d_sum + cal_dist( x(L) , y(L) , x(L + 1) , y(L + 1) );
+        d = cal_dist( x(1) , y(1) , x(L + 1) , y(L + 1) );
+        d_conti = cal_dist( x(L) , y(L) , x(L + 1) , y(L + 1) );
+        d_sum  = d_sum + d_conti;
         
-        if (d_sum - d) > d_threshold || L == length(x) - 1
+        % The conditions of forming a segment :
+        % 1). The distance sum is d_threshold longer than the distance from
+        %     first to current point.
+        % 2). The current point is the last point.
+        % 3). The distance between two consecutive points is longer than the
+        %     threshold.
+        if (d_sum - d) > d_threshold || L == length(x) - 1 || d_conti > d_conti_thres
             
             data_cell = { x(1:L) , y(1:L) ,{}};
             seg = cat(1, seg, data_cell);
-            x = x(L:end);
-            y = y(L:end);
+            x = x(L+1 :end);
+            y = y(L+1 :end);
 
             break;
         end
     end
-
+    
+    % If the data is insufficient, then stop the for loop.
     if length(x) <= 2
         seg{end,1} = [ seg{end,1} , x(end)];
         seg{end,2} = [ seg{end,2} , y(end)];
         break;
     end
+   
 end
 
 
@@ -362,13 +407,32 @@ axis([-10,130,-10,70]);
 %% Landmark Output
 circle_num = 0;
 for i = 1 : size(seg,1)
+    
     if seg{i,3} == "circle"
         circle_num = circle_num + 1;
     end
+    
 end
-seg
-landmark = {"line",{ size(seg,1) - 1 } ; "circle",{ circle_num }};
 
+corner_num = 0;
+for i = 1 : size(seg,1) - 1
+
+    x1 = seg{i,1}(end);
+    y1 = seg{i,2}(end);
+    x2 = seg{i+1,1}(1);
+    y2 = seg{i+1,2}(1);
+    
+    d = cal_dist(x1,y1,x2,y2);
+    if d < d_conti_thres
+        corner_num = corner_num + 1; 
+    end
+    
+end
+
+
+landmark = {"line", corner_num  ; "circle", circle_num };
+disp( ['Corner Number: ' num2str(landmark{1,2})] );
+disp( ['Circle Number: ' num2str(landmark{2,2})] );
 
 
 
