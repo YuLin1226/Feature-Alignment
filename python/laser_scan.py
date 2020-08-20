@@ -1,5 +1,5 @@
 import numpy as np
-from math import acos 
+from math import acos, pi
 import csv
 import matplotlib.pyplot as plt
 
@@ -13,6 +13,11 @@ class Segment():
         '''
         self.d_thres = 5
         self.d_break_thres = 10
+        self.shape_thres = 0.07
+        self.R_thres = 50
+        
+        self.circle_thres = (pi/180)*60
+        self.corner_thres = 0.7
 
         self.seg = []
 
@@ -37,13 +42,146 @@ class Segment():
                     y = y[L+1 : len(y)]
 
                     break
+
             if len(x) <= 2:
                 self.seg[-1][0] = self.seg[-1][0] + x
                 self.seg[-1][1] = self.seg[-1][1] + y
                 break
     
+    def classify_segment_type(self, seg):
+
+        # for loop : "number of row" times
+        for i in range( len(seg) ):
+            x = seg[i][0]
+            y = seg[i][1]
+
+            x0 = x[0]
+            y0 = y[0]
+
+            xn = x[-1]
+            yn = y[-1]
+
+            xm = np.mean(x)
+            ym = np.mean(y)
+
+            _, _, r = cal_circle([x0, xm, xn], [y0, ym, yn])
+            if r > self.R_thres:
+                seg[i][2] = "line"
+                
+            else:
+                seg[i][2] = "circle"
+        
+        return seg
+                
+    def corner_merger_operation(self, seg):
+        k = 0
+        i = 0
+        
+        for i in range(len(seg) - 1):
+            i = i + 1 + k
+            k = 0
+            x1 = seg[i][0]
+            y1 = seg[i][1]
+            # x1m = np.mean(x1)
+            # y1m = np.mean(y1)
+
+            x2 = seg[i+1][0]
+            y2 = seg[i+1][1]
+            # x2m = np.mean(x2)
+            # y2m = np.mean(y2)
+
+            val = cal_acos([ x1[-1] - x1[0], y1[-1] - y1[0] ], [x2[-1] - x2[0], y2[-1] - y2[0]])
+
+            if seg[i][2] == "circle":
+            
+                # circle , circle
+                if seg[i][2] == seg[i+1][2]:   
+                        # 合併Operation
+                        seg[i][0] = seg[i][0] + seg[i+1][0]
+                        seg[i][1] = seg[i][1] + seg[i+1][1]
+                        seg.pop(i+1)
+                        k = -1
+
+                # circle , line   
+                else:                       
+                    # 判斷轉角
+                    if val > self.corner_thres:
+                        k = 0
+                        
+                    # 合併circle (後者理當是Circle，但是誤判成Line的情況)
+                    else:
+                        k = -1
+                  
+                        
+                        # 合併Operation
+                        seg[i][0] = seg[i][0] + seg[i+1][0]
+                        seg[i][1] = seg[i][1] + seg[i+1][1]
+                        seg.pop(i+1)
+            
+            # seg[i][2] == "line"    
+            else:
+                
+                # line , line
+                if seg[i][2] == seg[i+1][2]:  
+                    
+                    
+                    # 判斷轉角
+                    if val > self.corner_thres:  
+                        k = 0
+                        
+                        
+                    # 合併line
+                    else:
+                        k = -1
+                        
+                        
+                        # 合併Operation
+                        seg[i][0] = seg[i][0] + seg[i+1][0]
+                        seg[i][1] = seg[i][1] + seg[i+1][1]
+                        seg.pop(i+1)
+                    
+                    
+                # line , circle
+                else:                      
+                    
+                    
+                    # 判斷轉角
+                    if val > self.corner_thres:
+                        k = 0
+                        
+                        
+                    # 合併line (後者理當是Line，但是誤判成Circle的情況)
+                    else:
+                        k = -1
+                        # 合併Operation
+                        seg[i][0] = seg[i][0] + seg[i+1][0]
+                        seg[i][1] = seg[i][1] + seg[i+1][1]
+                        seg.pop(i+1)
+        return seg
+
+    def do_landmark(self, seg):
+        circle_num = 0
+        for i in range(len(seg)):
+            if seg[i][2] == "circle":
+                circle_num = circle_num + 1
+            
+        corner_num = 0
+        for i in range( len(seg) - 1 ):
+            
+            x1 = seg[i][0][-1]
+            y1 = seg[i][1][-1]
+            x2 = seg[i+1][0][-1]
+            y2 = seg[i+1][1][-1]
+
+            d = cal_dist(x1,y1,x2,y2)
+            if d < self.d_break_thres:
+                corner_num = corner_num + 1
+            
 
 
+        landmark =  [   ["line",    corner_num],
+                        ["circle",  circle_num] ]
+        return landmark
 
 
 
