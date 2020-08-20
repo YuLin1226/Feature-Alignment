@@ -23,10 +23,16 @@ class Segment():
 
 
     def do_segment(self, x, y):
+        '''
+        Input:
+        x: 1xn, ndarray
+        y: 1xn, ndarray
+        '''
+
         for i in range(len(x)):
             
             d_sum = 0
-            for L in range(len(x)):
+            for L in range(len(x) - 1):
                 d       = cal_dist( x[0] , y[0] , x[L+1] , y[L+1] )
                 d_conti = cal_dist( x[L] , y[L] , x[L+1] , y[L+1] )
                 d_sum   = d_sum + d_conti
@@ -49,7 +55,7 @@ class Segment():
                 break
     
     def classify_segment_type(self, seg):
-
+        
         # for loop : "number of row" times
         for i in range( len(seg) ):
             x = seg[i][0]
@@ -78,13 +84,15 @@ class Segment():
         i = 0
         
         for i in range(len(seg) - 1):
+            
             i = i + 1 + k
             k = 0
             x1 = seg[i][0]
             y1 = seg[i][1]
             # x1m = np.mean(x1)
             # y1m = np.mean(y1)
-
+            if i+1 >= len(seg):
+                break
             x2 = seg[i+1][0]
             y2 = seg[i+1][1]
             # x2m = np.mean(x2)
@@ -95,12 +103,14 @@ class Segment():
             if seg[i][2] == "circle":
             
                 # circle , circle
-                if seg[i][2] == seg[i+1][2]:   
-                        # 合併Operation
-                        seg[i][0] = seg[i][0] + seg[i+1][0]
-                        seg[i][1] = seg[i][1] + seg[i+1][1]
-                        seg.pop(i+1)
-                        k = -1
+                if seg[i][2] == seg[i+1][2]:
+                    # 合併Operation
+                    seg[i][0] = np.hstack(( seg[i][0] , seg[i+1][0] ))
+                    seg[i][1] = np.hstack(( seg[i][1] , seg[i+1][1] ))
+                    # seg[i][0] = seg[i][0] + seg[i+1][0]
+                    # seg[i][1] = seg[i][1] + seg[i+1][1]
+                    seg.pop(i+1)
+                    k = -1
 
                 # circle , line   
                 else:                       
@@ -110,14 +120,14 @@ class Segment():
                         
                     # 合併circle (後者理當是Circle，但是誤判成Line的情況)
                     else:
-                        k = -1
-                  
                         
                         # 合併Operation
-                        seg[i][0] = seg[i][0] + seg[i+1][0]
-                        seg[i][1] = seg[i][1] + seg[i+1][1]
+                        seg[i][0] = np.hstack(( seg[i][0] , seg[i+1][0] ))
+                        seg[i][1] = np.hstack(( seg[i][1] , seg[i+1][1] ))
+                        # seg[i][0] = seg[i][0] + seg[i+1][0]
+                        # seg[i][1] = seg[i][1] + seg[i+1][1]
                         seg.pop(i+1)
-            
+                        k = -1
             # seg[i][2] == "line"    
             else:
                 
@@ -127,19 +137,20 @@ class Segment():
                     
                     # 判斷轉角
                     if val > self.corner_thres:  
-                        k = 0
+                        pass
                         
                         
                     # 合併line
                     else:
-                        k = -1
-                        
                         
                         # 合併Operation
-                        seg[i][0] = seg[i][0] + seg[i+1][0]
-                        seg[i][1] = seg[i][1] + seg[i+1][1]
+                        seg[i][0] = np.hstack(( seg[i][0] , seg[i+1][0] ))
+                        seg[i][1] = np.hstack(( seg[i][1] , seg[i+1][1] ))
+                        # seg[i][0] = seg[i][0] + seg[i+1][0]
+                        # seg[i][1] = seg[i][1] + seg[i+1][1]
                         seg.pop(i+1)
-                    
+                        k = -1
+                        
                     
                 # line , circle
                 else:                      
@@ -147,16 +158,19 @@ class Segment():
                     
                     # 判斷轉角
                     if val > self.corner_thres:
-                        k = 0
+                        pass
                         
                         
                     # 合併line (後者理當是Line，但是誤判成Circle的情況)
                     else:
-                        k = -1
+                        
                         # 合併Operation
-                        seg[i][0] = seg[i][0] + seg[i+1][0]
-                        seg[i][1] = seg[i][1] + seg[i+1][1]
+                        seg[i][0] = np.hstack(( seg[i][0] , seg[i+1][0] ))
+                        seg[i][1] = np.hstack(( seg[i][1] , seg[i+1][1] ))
+                        # seg[i][0] = seg[i][0] + seg[i+1][0]
+                        # seg[i][1] = seg[i][1] + seg[i+1][1]
                         seg.pop(i+1)
+                        k = -1
         return seg
 
     def do_landmark(self, seg):
@@ -179,7 +193,7 @@ class Segment():
             
 
 
-        landmark =  [   ["line",    corner_num],
+        landmark =  [   ["corner",    corner_num],
                         ["circle",  circle_num] ]
         return landmark
 
@@ -257,6 +271,16 @@ def read_csv(csv_file_scan='case1.csv'):
 
 if __name__ == "__main__":
     scan = read_csv()
-    print(np.shape(scan))
-    x = scan[1]
-    print(x)
+    # print(np.shape(scan))
+    x = scan[0]
+    y = scan[1]
+
+    SEG = Segment()
+    SEG.do_segment(x, y)
+    SEG.seg = SEG.classify_segment_type(SEG.seg)
+    SEG.seg = SEG.corner_merger_operation(SEG.seg)
+    landmark = SEG.do_landmark(SEG.seg)
+    print(SEG.seg[0][2])
+    print(SEG.seg[1][2])
+    print(SEG.seg[2][2])
+    print(landmark)

@@ -3,7 +3,7 @@ close all;
 clc;
 %% Create Scan Points
 
-case_num = 4;
+case_num = 1;
 x = []; y = [];
 noise_mag = 1;
 switch case_num
