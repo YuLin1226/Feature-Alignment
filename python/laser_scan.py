@@ -184,8 +184,8 @@ class Segment():
             
             x1 = seg[i][0][-1]
             y1 = seg[i][1][-1]
-            x2 = seg[i+1][0][-1]
-            y2 = seg[i+1][1][-1]
+            x2 = seg[i+1][0][0]
+            y2 = seg[i+1][1][0]
 
             d = cal_dist(x1,y1,x2,y2)
             if d < self.d_break_thres:
